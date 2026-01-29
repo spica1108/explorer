@@ -64,15 +64,14 @@ export default {
       post.isFavorite = !post.isFavorite;
     };
 
-    const goDetail = (postId) => {
-      const post = posts.value.find((p) => p.id === postId);
+    const goDetail = (post) => {
       //左侧高亮对应用户
       if (post) {
         selectedUser.value = users.value.find(
           (user) => user.id === post.userId,
         );
       }
-      router.push({ name: "Detail", params: { id: postId } });
+      router.push({ name: "Detail", params: { id: post.id } });
     };
 
     return {
