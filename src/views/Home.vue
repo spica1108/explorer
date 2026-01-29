@@ -141,27 +141,27 @@ export default {
         </div>
       </div>
     </div>
-  </div>
-  <div class="main-content">
-    <div class="main-header">
-      <h2>
-        {{ selectedUser ? selectedUser.name + "的贴文" : "请选择用户" }}
-      </h2>
-      <button class="favorited-btn" @click="goFavorites">
-        已收藏 ({{ favoritedCount }})
-      </button>
-    </div>
-    <div v-if="selectedUser" class="post-grid">
-      <div class="post-card" v-for="post in displayedPosts" :key="post.id">
-        <h3>{{ post.title }}</h3>
-        <p>{{ post.content }}</p>
-        <button @click="togglFavorite(post)">
-          {{ post.isFavorite ? "取消收藏" : "收藏" }}
+    <div class="main-content">
+      <div class="main-header">
+        <h2>
+          {{ selectedUser ? selectedUser.name + "的贴文" : "请选择用户" }}
+        </h2>
+        <button class="favorited-btn" @click="goFavorites">
+          已收藏 ({{ favoritedCount }})
         </button>
-        <button @click="goDetail(post)">查看详情</button>
       </div>
+      <div v-if="selectedUser" class="post-grid">
+        <div class="post-card" v-for="post in displayedPosts" :key="post.id">
+          <h3>{{ post.title }}</h3>
+          <p>{{ post.content }}</p>
+          <button @click="togglFavorite(post)">
+            {{ post.isFavorite ? "取消收藏" : "收藏" }}
+          </button>
+          <button @click="goDetail(post)">查看详情</button>
+        </div>
+      </div>
+      <div v-else class="placeholder">请选择左侧用户</div>
     </div>
-    <div v-else class="placeholder">请选择左侧用户</div>
   </div>
 </template>
 
