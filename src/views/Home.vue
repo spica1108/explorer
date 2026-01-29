@@ -1,11 +1,11 @@
 <script>
 import { ref, computed } from "vue";
-import { useRoute } from "vue-router";
-
+import { useRoute, useRouter } from "vue-router";
 export default {
   name: "Home",
   setup() {
     const route = useRoute();
+    const router = useRouter();
     const users = ref([
       { id: 1, name: "用户一" },
       { id: 2, name: "用户二" },
@@ -72,8 +72,9 @@ export default {
           (user) => user.id === post.userId,
         );
       }
-      router.push({ name: "Postdetail", params: { id: postId } });
+      router.push({ name: "Detail", params: { id: postId } });
     };
+
     return {
       users,
       searchKeyword,
