@@ -1,18 +1,14 @@
 <script>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 export default {
   name: "Home",
   setup() {
     const route = useRoute();
     const router = useRouter();
-    const users = ref([
-      { id: 1, name: "用户一" },
-      { id: 2, name: "用户二" },
-      { id: 3, name: "用户三" },
-      { id: 4, name: "用户四" },
-      { id: 5, name: "用户五" },
-    ]);
+    const users = ref([]);
+    const posts = ref([]);
+    const loading = ref(true);
 
     const selectedUser = ref(null);
     const searchKeyword = ref("");
@@ -33,19 +29,6 @@ export default {
       );
     });
 
-    const posts = ref([
-      { id: 1, userId: 1, title: "贴文一", content: "这是贴文一的内容。" },
-      { id: 2, userId: 1, title: "贴文二", content: "这是贴文二的内容。" },
-      { id: 3, userId: 2, title: "贴文三", content: "这是贴文三的内容。" },
-      { id: 4, userId: 3, title: "贴文四", content: "这是贴文四的内容。" },
-      { id: 5, userId: 2, title: "贴文五", content: "这是贴文五的内容。" },
-      { id: 6, userId: 4, title: "贴文六", content: "这是贴文六的内容。" },
-      { id: 7, userId: 5, title: "贴文七", content: "这是贴文七的内容。" },
-      { id: 8, userId: 3, title: "贴文八", content: "这是贴文八的内容。" },
-      { id: 9, userId: 4, title: "贴文九", content: "这是贴文九的内容。" },
-      { id: 10, userId: 5, title: "贴文十", content: "这是贴文十的内容。" },
-    ]);
-
     //选中用户
     const selectUser = (user) => {
       selectedUser.value = user;
@@ -54,7 +37,6 @@ export default {
     // 根据选中用户显示对应贴文
     const displayedPosts = computed(() => {
       if (!selectedUser.value) return [];
-      // 假设每个用户都有相应的贴文，这里可以根据实际需求进行过滤
       return posts.value.filter(
         (post) => post.userId === selectedUser.value.id,
       );
@@ -63,6 +45,11 @@ export default {
     const togglFavorite = (post) => {
       post.isFavorite = !post.isFavorite;
     };
+
+    // 计算已收藏贴文数量
+    const favoritedCount = computed(() => {
+      return posts.value.filter((post) => post.isFavorite).length;
+    });
 
     const goDetail = (post) => {
       //左侧高亮对应用户
@@ -73,6 +60,43 @@ export default {
       }
       router.push({ name: "Detail", params: { id: post.id } });
     };
+
+    const goFavorites = () => {
+      selectedUser.value = null;
+      router.push({ name: "Favorites" });
+    };
+
+    // 从 JSONPlaceholder 获取数据
+    onMounted(async () => {
+      try {
+        loading.value = true;
+        // 获取用户列表
+        const usersResponse = await fetch(
+          "https://jsonplaceholder.typicode.com/users"
+        );
+        const usersData = await usersResponse.json();
+        users.value = usersData.slice(0, 5).map((user) => ({
+          id: user.id,
+          name: user.name,
+        }));
+
+        // 获取贴文列表
+        const postsResponse = await fetch(
+          "https://jsonplaceholder.typicode.com/posts"
+        );
+        const postsData = await postsResponse.json();
+        posts.value = postsData.slice(0, 10).map((post) => ({
+          id: post.id,
+          userId: post.userId,
+          title: post.title,
+          content: post.body.substring(0, 50) + "...",
+        }));
+      } catch (error) {
+        console.error("获取数据失败：", error);
+      } finally {
+        loading.value = false;
+      }
+    });
 
     return {
       users,
@@ -85,6 +109,9 @@ export default {
       displayedPosts,
       togglFavorite,
       goDetail,
+      favoritedCount,
+      goFavorites,
+      loading,
     };
   },
 };
@@ -101,7 +128,8 @@ export default {
         @input="debouncedFilter"
         class="search-input"
       />
-      <div class="user-grid">
+      <div v-if="loading" class="loading">加载中...</div>
+      <div v-else class="user-grid">
         <div
           v-for="user in filteredUsers"
           :key="user.id"
@@ -112,9 +140,17 @@ export default {
           {{ user.name }}
         </div>
       </div>
+      </div>
     </div>
     <div class="main-content">
-      <h2>{{ selectedUser ? selectedUser.name + "的贴文" : "请选择用户" }}</h2>
+      <div class="main-header">
+        <h2>
+          {{ selectedUser ? selectedUser.name + "的贴文" : "请选择用户" }}
+        </h2>
+        <button class="favorited-btn" @click="goFavorites">
+          已收藏 ({{ favoritedCount }})
+        </button>
+      </div>
       <div v-if="selectedUser" class="post-grid">
         <div class="post-card" v-for="post in displayedPosts" :key="post.id">
           <h3>{{ post.title }}</h3>
@@ -139,11 +175,19 @@ export default {
   width: 33.33%;
   padding: 20px;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
 }
 .sidebar h2 {
   margin-top: 0;
   color: #333;
+}
+.loading {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+  font-size: 14px;
 }
 .search-input {
   width: 100%;
@@ -189,6 +233,33 @@ export default {
   width: 66.67%;
   padding: 20px;
   overflow-y: auto;
+}
+.main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.main-header h2 {
+  margin: 0;
+  color: #333;
+  flex: 1;
+}
+.favorited-btn {
+  padding: 10px 20px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+.favorited-btn:hover {
+  background-color: #4caf50;
+  transform: scale(1.05);
 }
 .post-grid {
   display: grid;

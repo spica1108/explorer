@@ -13,6 +13,11 @@ const routes = [
     name: "Detail",
     component: Detail,
   },
+  {
+    path: "/favorites",
+    name: "Favorites",
+    component: () => import("../views/star.vue"),
+  },
 ];
 const router = createRouter({
   history: createWebHistory(),
